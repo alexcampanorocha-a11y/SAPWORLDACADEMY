@@ -11,23 +11,42 @@ function buscar() {
         document.getElementById("resultado").innerHTML =
           "❌ No encontrado";
       }
+    })
+    .catch(() => {
+      document.getElementById("resultado").innerHTML =
+        "❌ Error al conectar";
     });
 }
 
 function crear() {
-  const data = {
-    codigo: document.getElementById("codigo").value,
-    nombre: document.getElementById("nombre").value,
-    curso: document.getElementById("curso").value
-  };
+  const codigo = document.getElementById("codigo").value;
+  const nombre = document.getElementById("nombre").value;
+  const curso = document.getElementById("curso").value;
+
+  if (!codigo || !nombre || !curso) {
+    alert("Completa todos los campos");
+    return;
+  }
 
   fetch('/api/certificado', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      codigo,
+      nombre,
+      curso
+    })
+  })
+  .then(res => res.json())
   .then(() => {
-  alert("Certificado creado correctamente");
+    alert("Certificado guardado correctamente");
 
-  // Redirigir automáticamente a validación
-  window.location.href = `/index.html`;
-});
+    // REDIRECCIÓN
+    window.location.href = `/index.html`;
+  })
+  .catch(() => {
+    alert("Error al guardar");
+  });
+}
