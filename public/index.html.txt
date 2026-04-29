@@ -1,9 +1,0 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>SAP World Academy</title>
-</head>
-<body>
-  <h1>Bienvenido a SAP World Academy 🚀</h1>
-</body>
-</html>
