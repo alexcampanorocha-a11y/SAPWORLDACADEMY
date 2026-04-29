@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Validar Certificado</title>
+</head>
+<body>
+  <h1>Verificar Certificado</h1>
+
+  <input id="codigo" placeholder="Ingrese código">
+  <button onclick="buscar()">Validar</button>
+
+  <script>
+    function buscar() {
+      const codigo = document.getElementById("codigo").value;
+      window.location.href = `/certificado.html?codigo=${codigo}`;
+    }
+  </script>
+</body>
+</html>
