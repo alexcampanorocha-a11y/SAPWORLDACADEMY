@@ -1,0 +1,406 @@
+import React, { useState } from 'react';
+import { 
+  Search, ShieldCheck, ShieldAlert, Award, 
+  Calendar, Clock, User, FileText, 
+  PlusCircle, CheckCircle2, AlertCircle, Globe, QrCode
+} from 'lucide-react';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('verificar');
+  
+  // Base de datos simulada actualizada con cursos SAP
+  const [mockDB, setMockDB] = useState([
+    { codigo: 'CERT-2026-001', nombre: 'Alex Campano', curso: 'SAP S/4HANA Finance', horas: '120', nota: '18', fecha: '2026-04-20', estado: 'Válido' },
+    { codigo: 'CERT-2026-002', nombre: 'Ana Gómez', curso: 'Desarrollo en SAP ABAP', horas: '80', nota: '19', fecha: '2026-04-25', estado: 'Válido' },
+    { codigo: 'CERT-2026-003', nombre: 'Carlos Ruiz', curso: 'SAP Fiori UX/UI', horas: '60', nota: '17', fecha: '2026-04-26', estado: 'Válido' }
+  ]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+      {/* Navegación corporativa */}
+      <nav className="bg-[#0f172a] text-white shadow-lg border-b border-blue-900">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between h-auto sm:h-20 py-4 sm:py-0 items-center gap-4 sm:gap-0">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Globe className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <span className="font-extrabold text-2xl tracking-tight text-white block">SAP WORLD ACADEMY</span>
+                <span className="text-blue-300 text-xs font-semibold tracking-widest uppercase">Portal de Certificación</span>
+              </div>
+            </div>
+            
+            <div className="flex space-x-2 bg-slate-800 p-1 rounded-lg">
+              <button
+                onClick={() => setActiveTab('verificar')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === 'verificar' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <Search className="h-4 w-4" />
+                Verificar
+              </button>
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === 'admin' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <PlusCircle className="h-4 w-4" />
+                Emisión
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Contenido Principal */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {activeTab === 'verificar' ? (
+          <SeccionVerificacion mockDB={mockDB} />
+        ) : (
+          <SeccionAdministracion mockDB={mockDB} setMockDB={setMockDB} />
+        )}
+      </main>
+    </div>
+  );
+}
+
+// COMPONENTE: Sección de Verificación
+function SeccionVerificacion({ mockDB }) {
+  const [codigo, setCodigo] = useState('');
+  const [resultado, setResultado] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const manejarVerificacion = async (e) => {
+    e.preventDefault();
+    if (!codigo.trim()) return;
+    
+    setLoading(true);
+    setResultado(null);
+    setError('');
+
+    try {
+      // Simulamos la llamada a un backend y usamos la BD local (mockDB)
+      setTimeout(() => {
+        const cert = mockDB.find(c => c.codigo.toLowerCase() === codigo.toLowerCase());
+        if (cert) {
+          setResultado({ valido: true, data: cert });
+        } else {
+          setResultado({ valido: false });
+        }
+        setLoading(false);
+      }, 800);
+    } catch (err) {
+      setError('Error al conectar con el servidor.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+      <div className="text-center space-y-3 mb-10">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Validación de Credenciales</h1>
+        <p className="text-slate-500 max-w-xl mx-auto">
+          Ingrese el código de registro único para verificar la autenticidad del certificado emitido por SAP World Academy.
+        </p>
+      </div>
+
+      {/* Buscador */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <form onSubmit={manejarVerificacion} className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              className="block w-full pl-11 pr-4 py-4 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all text-lg font-mono"
+              placeholder="Ej. CERT-2026-001"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-[#0f172a] hover:bg-slate-800 text-white px-8 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-md text-lg sm:w-auto w-full"
+          >
+            {loading ? 'Consultando...' : 'Verificar Certificado'}
+          </button>
+        </form>
+      </div>
+
+      {/* Resultados */}
+      {resultado && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {resultado.valido ? (
+            <TarjetaCertificado data={resultado.data} />
+          ) : (
+            <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-10 text-center space-y-5 shadow-sm">
+              <div className="mx-auto bg-white shadow-sm w-20 h-20 rounded-full flex items-center justify-center border border-red-100">
+                <ShieldAlert className="h-10 w-10 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-red-800">Certificado No Encontrado</h3>
+                <p className="text-red-600 mt-2 max-w-md mx-auto">
+                  El código ingresado no existe en nuestros registros oficiales o ha sido revocado. Por favor, verifique el código e intente nuevamente.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// COMPONENTE: Tarjeta de visualización del Certificado con QR
+function TarjetaCertificado({ data }) {
+  // Generar URL del código QR utilizando la API de qrserver
+  // Apunta a una URL ficticia de verificación para darle realismo
+  const verifyUrl = `https://sapworldacademy.com/verify/${data.codigo}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}&color=0f172a&bgcolor=ffffff`;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative">
+      {/* Banner de Estado */}
+      <div className="bg-emerald-50 border-b border-emerald-100 p-4 flex justify-center sm:justify-between items-center flex-wrap gap-2">
+        <div className="flex items-center gap-2 text-emerald-700 font-bold">
+          <ShieldCheck className="h-5 w-5" />
+          <span>Certificado Auténtico y Vigente</span>
+        </div>
+        <div className="text-xs font-mono text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+          ID: {data.codigo}
+        </div>
+      </div>
+      
+      {/* Cabecera del certificado */}
+      <div className="p-8 pb-6 border-b border-slate-100 bg-slate-50/50 flex flex-col items-center text-center">
+        <Globe className="h-12 w-12 text-blue-600 mb-4 opacity-20" />
+        <p className="text-sm font-bold text-blue-600 tracking-widest uppercase mb-2">
+          SAP World Academy Oficial
+        </p>
+        <h2 className="text-3xl font-extrabold text-slate-900">{data.curso}</h2>
+      </div>
+
+      <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        {/* Detalles del estudiante */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-slate-100 p-3 rounded-xl">
+              <User className="h-6 w-6 text-slate-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-1">Otorgado a</p>
+              <p className="text-2xl font-bold text-slate-900">{data.nombre}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-slate-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Fecha de Emisión</p>
+                <p className="text-slate-900 font-medium">{data.fecha}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <FileText className="h-5 w-5 text-slate-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Registro</p>
+                <p className="font-mono text-slate-900 font-medium">{data.codigo}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-slate-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Horas Lectivas</p>
+                <p className="text-slate-900 font-medium">{data.horas}h Académicas</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Award className="h-5 w-5 text-slate-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Calificación</p>
+                <p className="text-slate-900 font-medium">{data.nota} / 20</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección del Código QR */}
+        <div className="md:col-span-1 flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-4">
+            <img 
+              src={qrCodeUrl} 
+              alt="Código QR de Verificación" 
+              className="w-32 h-32 object-contain"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 text-blue-600 justify-center">
+            <QrCode className="h-4 w-4" />
+            <p className="text-xs font-bold uppercase tracking-wider">Escaneo Oficial</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// COMPONENTE: Sección de Administración (Crear)
+function SeccionAdministracion({ mockDB, setMockDB }) {
+  const [formData, setFormData] = useState({
+    codigo: '', nombre: '', curso: '', horas: '', nota: '', fecha: new Date().toISOString().split('T')[0]
+  });
+  const [estado, setEstado] = useState({ tipo: '', msj: '' });
+
+  const generarCodigo = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    setFormData({ ...formData, codigo: `CERT-${new Date().getFullYear()}-${randomNum}` });
+  };
+
+  const manejarEnvio = async (e) => {
+    e.preventDefault();
+    setEstado({ tipo: 'loading', msj: 'Procesando...' });
+
+    try {
+      // Simular guardado
+      setTimeout(() => {
+        const existe = mockDB.some(c => c.codigo === formData.codigo);
+        if (existe) {
+          setEstado({ tipo: 'error', msj: 'El código de certificado ya existe.' });
+        } else {
+          setMockDB([{ ...formData, estado: 'Válido' }, ...mockDB]);
+          setEstado({ tipo: 'success', msj: '¡Certificado emitido y guardado exitosamente!' });
+          setFormData({ codigo: '', nombre: '', curso: '', horas: '', nota: '', fecha: new Date().toISOString().split('T')[0] });
+        }
+      }, 600);
+    } catch (err) {
+      setEstado({ tipo: 'error', msj: 'Error al crear el certificado.' });
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
+        <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+          <Award className="h-7 w-7 text-blue-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900">Emisión de Certificados</h2>
+          <p className="text-slate-500 text-sm mt-1">Plataforma administrativa SAP World Academy</p>
+        </div>
+      </div>
+
+      {estado.msj && (
+        <div className={`p-4 rounded-xl mb-6 flex items-start gap-3 ${
+          estado.tipo === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 
+          estado.tipo === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 
+          'bg-blue-50 text-blue-800 border border-blue-200'
+        }`}>
+          {estado.tipo === 'success' && <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" />}
+          {estado.tipo === 'error' && <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />}
+          <p className="font-medium">{estado.msj}</p>
+        </div>
+      )}
+
+      <form onSubmit={manejarEnvio} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Nombre Completo del Alumno</label>
+            <input
+              type="text" required
+              value={formData.nombre}
+              onChange={e => setFormData({...formData, nombre: e.target.value})}
+              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all bg-slate-50 focus:bg-white"
+              placeholder="Ej. María Elena Salinas"
+            />
+          </div>
+
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Programa / Curso SAP</label>
+            <input
+              type="text" required
+              value={formData.curso}
+              onChange={e => setFormData({...formData, curso: e.target.value})}
+              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all bg-slate-50 focus:bg-white"
+              placeholder="Ej. SAP S/4HANA Finance Master"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Horas Lectivas</label>
+            <input
+              type="number" required min="1"
+              value={formData.horas}
+              onChange={e => setFormData({...formData, horas: e.target.value})}
+              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all bg-slate-50 focus:bg-white"
+              placeholder="Ej. 120"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Nota Final</label>
+            <input
+              type="text" 
+              value={formData.nota}
+              onChange={e => setFormData({...formData, nota: e.target.value})}
+              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all bg-slate-50 focus:bg-white"
+              placeholder="Ej. 19"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Fecha de Emisión</label>
+            <input
+              type="date" required
+              value={formData.fecha}
+              onChange={e => setFormData({...formData, fecha: e.target.value})}
+              className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all bg-slate-50 focus:bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Código Único (ID)</label>
+            <div className="flex gap-2">
+              <input
+                type="text" required
+                value={formData.codigo}
+                onChange={e => setFormData({...formData, codigo: e.target.value})}
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-mono text-sm bg-slate-50 focus:bg-white"
+                placeholder="CERT-..."
+              />
+              <button
+                type="button" 
+                onClick={generarCodigo}
+                className="px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
+                title="Generar código automático"
+              >
+                Auto
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-6 mt-8 border-t border-slate-100 flex justify-end">
+          <button
+            type="submit" 
+            disabled={estado.tipo === 'loading'}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-md disabled:opacity-70 w-full sm:w-auto text-lg"
+          >
+            {estado.tipo === 'loading' ? 'Emitiendo...' : 'Emitir Certificado Oficial'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
