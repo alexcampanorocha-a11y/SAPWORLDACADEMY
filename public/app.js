@@ -25,5 +25,9 @@ function crear() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  }).then(() => alert("Guardado"));
-}
+  .then(() => {
+  alert("Certificado creado correctamente");
+
+  // Redirigir automáticamente a validación
+  window.location.href = `/index.html`;
+});
