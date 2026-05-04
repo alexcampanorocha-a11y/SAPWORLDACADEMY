@@ -1,23 +1,27 @@
 import React from 'react';
-import { Globe, LogOut, Home, BookOpen, Search } from 'lucide-react';
+import { Home, BookOpen, Award, LogOut, ShieldCheck } from 'lucide-react';
 
-export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
+export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
+  const menus = [
+    { id: 'inicio', label: 'Inicio', icon: <Home size={20}/> },
+    { id: 'aula', label: 'Aula Virtual', icon: <BookOpen size={20}/> },
+    { id: 'certificados', label: 'Certificados', icon: <Award size={20}/> },
+  ];
+
   return (
-    <aside className="w-64 bg-[#0f172a] text-white flex flex-col h-full">
-      <div className="p-6 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <Globe className="h-6 w-6 text-blue-500" />
-          <span className="font-bold text-lg">SAP WORLD</span>
-        </div>
-      </div>
+    <aside className="w-64 bg-[#1e293b] text-white flex flex-col">
+      <div className="p-6 text-center border-b border-slate-700 font-black text-blue-400">SAP WORLD</div>
       <nav className="flex-1 p-4 space-y-2">
-        <button onClick={() => setActiveTab('inicio')} className={`w-full flex p-3 rounded-lg ${activeTab === 'inicio' ? 'bg-blue-600' : ''}`}> <Home className="mr-2"/> Inicio</button>
-        <button onClick={() => setActiveTab('aula')} className={`w-full flex p-3 rounded-lg ${activeTab === 'aula' ? 'bg-blue-600' : ''}`}> <BookOpen className="mr-2"/> Aula</button>
-        <button onClick={() => setActiveTab('verificar')} className={`w-full flex p-3 rounded-lg ${activeTab === 'verificar' ? 'bg-blue-600' : ''}`}> <Search className="mr-2"/> Verificar</button>
+        {menus.map(item => (
+          <button key={item.id} onClick={() => setActiveTab(item.id)}
+            className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${activeTab === item.id ? 'bg-blue-600' : 'hover:bg-slate-700'}`}>
+            {item.icon} {item.label}
+          </button>
+        ))}
       </nav>
-      <div className="p-4 border-t border-slate-800">
-        <button onClick={onLogout} className="text-red-400 flex items-center"> <LogOut className="mr-2"/> Salir </button>
-      </div>
+      <button onClick={onLogout} className="m-4 flex items-center gap-3 p-3 text-red-400 hover:bg-red-900/20 rounded-xl">
+        <LogOut size={20}/> Cerrar Sesión
+      </button>
     </aside>
   );
 }
