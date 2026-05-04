@@ -1,8 +1,13 @@
-export const INITIAL_USERS = [
-  { id: 1, username: 'U18203878@sap.edu.pe', password: 'Adolescente', role: 'admin', name: 'Admin SAP World' },
-  { id: 2, username: 'alumno', password: '123', role: 'student', name: 'Estudiante SAP' }
-];
+export const CREDENCIALES_ACCESO = {
+  usuario: 'Alex@sap.edu.pe',
+  password: 'Adolescente'
+};
+
+export const EMPRESA_INFO = {
+  mision: "Brindar capacitación de alta calidad en módulos SAP para potenciar el talento humano en sectores industriales y mineros.",
+  vision: "Ser la academia virtual líder en formación técnica SAP, reconocida por la excelencia académica y la innovación tecnológica."
+};
 
 export const INITIAL_CERTIFICATES = [
-  { codigo: 'CERT-SAP-2026-001', nombre: 'Alex Campano', curso: 'SAP S/4HANA Finance', horas: '120', nota: '18', fecha: '2026-04-20', estado: 'Válido' }
+  { id: 1, nombre: 'Alex Campano', curso: 'SAP MM', horas: '40', nota: '18', codigo: 'SAP-001', fechaExp: '2027-12-31' }
 ];
