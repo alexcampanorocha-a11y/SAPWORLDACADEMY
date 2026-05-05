@@ -85,7 +85,7 @@ export default function App() {
               <img src="/banner-inicio.jpg" alt="Banner" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-transparent flex items-center p-12">
                 <h2 className="text-white text-4xl font-black italic uppercase tracking-tighter drop-shadow-lg">
-                  Formando expertos con SAP <br/> para el área industrial
+                  Formando expertos con SAP <br/> para el sector industrial
                 </h2>
               </div>
             </div>
