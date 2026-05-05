@@ -7,9 +7,13 @@ const EMPRESA_INFO = {
   vision: "Ser la academia virtual referente en el mercado hispanohablante para consultores SAP."
 };
 
+// Correo maestro para identificar al administrador principal
+const ADMIN_MASTER_EMAIL = 'Alex@sap.edu.pe';
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); 
+  const [userEmail, setUserEmail] = useState(''); 
   const [activeTab, setActiveTab] = useState('inicio');
   
   const [usuarios, setUsuarios] = useState([]);
@@ -34,9 +38,10 @@ export default function App() {
 
   const manejarAcceso = async (u, p) => {
     // Acceso Maestro para administración
-    if (u === 'Alex@sap.edu.pe' && p === 'Adolescente') {
+    if (u === ADMIN_MASTER_EMAIL && p === 'Adolescente') {
       setIsAdmin(true);
       setIsLoggedIn(true);
+      setUserEmail(u);
       return;
     }
 
@@ -44,6 +49,7 @@ export default function App() {
     if (data) {
       setIsLoggedIn(true);
       setIsAdmin(data.rol === 'Administrador'); 
+      setUserEmail(u);
     } else {
       alert("Credenciales incorrectas");
     }
@@ -75,13 +81,16 @@ export default function App() {
             <h1 className="text-5xl font-black text-slate-800 tracking-tighter italic uppercase">SAP World Academy</h1>
             <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mt-1">SISTEMA DE GESTIÓN ACADÉMICA</p>
           </div>
-          <img src="/logo.png" alt="Watermark" className="h-16 opacity-10 grayscale select-none" />
+          <div className="text-right">
+             <p className="text-[9px] font-black text-blue-600 uppercase">Usuario Activo</p>
+             <p className="text-xs font-bold italic">{userEmail}</p>
+          </div>
         </header>
 
         {activeTab === 'inicio' && (
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
-            {/* Banner Principal Superior */}
+            {/* Banner Principal Superior con Texto Actualizado */}
             <div className="w-full h-72 rounded-[45px] overflow-hidden shadow-2xl border-4 border-white relative">
               <img 
                 src="/banner-inicio.jpg" 
@@ -91,13 +100,12 @@ export default function App() {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-transparent flex items-center p-12">
                 <h2 className="text-white text-4xl font-black italic uppercase tracking-tighter drop-shadow-lg">
-                  Formando Expertos <br/> en SAP MM y PM
+                  Formando expertos con SAP <br/> para el area industrial
                 </h2>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {/* Bloque Misión con Imagen */}
               <div className="flex flex-col gap-6">
                 <div className="h-56 w-full rounded-[40px] overflow-hidden shadow-lg border-4 border-white">
                   <img 
@@ -113,7 +121,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Bloque Visión con Imagen */}
               <div className="flex flex-col gap-6">
                 <div className="h-56 w-full rounded-[40px] overflow-hidden shadow-lg border-4 border-white">
                   <img 
@@ -130,7 +137,7 @@ export default function App() {
               </div>
             </div>
 
-            {isAdmin && <SeccionUsuarios setUsuarios={setUsuarios} />}
+            {isAdmin && <SeccionUsuarios setUsuarios={setUsuarios} usuarios={usuarios} />}
           </div>
         )}
 
@@ -152,8 +159,9 @@ export default function App() {
 
 // --- COMPONENTES AUXILIARES ---
 
-function SeccionUsuarios({ setUsuarios }) {
+function SeccionUsuarios({ setUsuarios, usuarios }) {
   const [form, setForm] = useState({ nombre: '', correo: '', pass: '', rol: 'Estudiante' });
+  
   const guardar = async (e) => {
     e.preventDefault();
     const { error } = await supabase.from('usuarios').insert([form]);
@@ -163,10 +171,21 @@ function SeccionUsuarios({ setUsuarios }) {
       alert("Acceso institucional creado."); 
     } else { alert("Error al registrar el usuario."); }
   };
+
+  const eliminarUsuario = async (id) => {
+    if (window.confirm("¿Eliminar este acceso?")) {
+      const { error } = await supabase.from('usuarios').delete().eq('id', id);
+      if (!error) {
+        setUsuarios(prev => prev.filter(u => u.id !== id));
+        alert("Usuario eliminado.");
+      }
+    }
+  };
+
   return (
     <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
       <h2 className="text-2xl font-black italic text-slate-800 mb-6 uppercase tracking-tighter">Gestión de Personal</h2>
-      <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <input className="border-2 border-slate-50 bg-slate-50/50 p-4 rounded-2xl text-sm outline-none focus:border-blue-600 focus:bg-white" placeholder="Nombre" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required />
         <input className="border-2 border-slate-50 bg-slate-50/50 p-4 rounded-2xl text-sm outline-none focus:border-blue-600 focus:bg-white" placeholder="Email" value={form.correo} onChange={e => setForm({...form, correo: e.target.value})} required />
         <input className="border-2 border-slate-50 bg-slate-50/50 p-4 rounded-2xl text-sm outline-none focus:border-blue-600 focus:bg-white" type="password" placeholder="Pass" value={form.pass} onChange={e => setForm({...form, pass: e.target.value})} required />
@@ -176,12 +195,35 @@ function SeccionUsuarios({ setUsuarios }) {
         </select>
         <button className="bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-colors">Registrar</button>
       </form>
+
+      <div className="space-y-2">
+        {usuarios.map(u => (
+          <div key={u.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <span className="text-xs font-bold">{u.nombre} ({u.correo})</span>
+            {u.correo !== ADMIN_MASTER_EMAIL && (
+              <button onClick={() => eliminarUsuario(u.id)} className="text-red-500 font-black text-[10px] uppercase hover:underline">Eliminar Acceso</button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const [tema, setTema] = useState('');
+
+  const eliminarDato = async (id, tabla) => {
+    if (window.confirm("¿Deseas eliminar este material permanentemente?")) {
+      const { error } = await supabase.from(tabla).delete().eq('id', id);
+      if (!error) {
+        if (tabla === 'materiales') setArchivos(prev => prev.filter(a => a.id !== id));
+        else setClases(prev => prev.filter(c => c.id !== id));
+        alert("Eliminado del sistema.");
+      }
+    }
+  };
+
   const manejarSubida = async (e, tipo) => {
     if (!esAdmin) return;
     const file = e.target.files[0];
@@ -192,25 +234,35 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       const { data: { publicUrl } } = supabase.storage.from('materiales-sap').getPublicUrl(path);
       const tabla = tipo === 'zoom' ? 'clases_zoom' : 'materiales';
       const row = tipo === 'zoom' ? { tema: tema, link: publicUrl } : { nombre: path, link: publicUrl };
-      await supabase.from(tabla).insert([row]);
-      tipo === 'zoom' ? setClases([...clases, row]) : setArchivos([...archivos, row]);
+      const { data: insertedData } = await supabase.from(tabla).insert([row]).select();
+      
+      if (tipo === 'zoom') setClases([...clases, insertedData[0]]);
+      else setArchivos([...archivos, insertedData[0]]);
+      
       setTema(''); alert("Cargado con éxito.");
     } catch (err) { alert(err.message); }
   };
+
   return (
     <div className="space-y-10">
       <div className="bg-white p-10 rounded-[40px] border shadow-sm">
         <h2 className="text-2xl font-black mb-6 italic text-slate-800">Repositorio PDF</h2>
         {esAdmin && <input type="file" onChange={(e) => manejarSubida(e, 'mat')} className="mb-6 block text-xs" />}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {archivos.map((a, i) => (
-            <div key={i} className="flex justify-between items-center p-5 bg-slate-50/50 rounded-3xl border">
+          {archivos.map((a) => (
+            <div key={a.id} className="flex justify-between items-center p-5 bg-slate-50/50 rounded-3xl border">
               <span className="font-bold text-xs truncate mr-4">📄 {a.nombre}</span>
-              <a href={a.link} target="_blank" className="text-blue-600 font-black text-[10px] uppercase">Descargar</a>
+              <div className="flex gap-4 items-center">
+                <a href={a.link} target="_blank" rel="noreferrer" className="text-blue-600 font-black text-[10px] uppercase">Descargar</a>
+                {esAdmin && (
+                  <button onClick={() => eliminarDato(a.id, 'materiales')} className="text-red-500 font-black text-[10px] uppercase">Eliminar</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
+
       <div className="bg-white p-10 rounded-[40px] border-l-[12px] border-l-indigo-600 shadow-sm">
         <h2 className="text-2xl font-black mb-6 italic text-slate-800">Grabaciones en Vivo</h2>
         {esAdmin && (
@@ -220,10 +272,15 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
           </div>
         )}
         <div className="grid gap-4">
-          {clases.map((c, i) => (
-            <div key={i} className="flex justify-between p-6 bg-white border rounded-[30px] shadow-sm items-center">
+          {clases.map((c) => (
+            <div key={c.id} className="flex justify-between p-6 bg-white border rounded-[30px] shadow-sm items-center">
               <span className="font-black text-sm text-slate-700 italic">🎥 {c.tema}</span>
-              <a href={c.link} target="_blank" className="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">Ver Clase</a>
+              <div className="flex gap-4 items-center">
+                <a href={c.link} target="_blank" rel="noreferrer" className="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">Ver Clase</a>
+                {esAdmin && (
+                  <button onClick={() => eliminarDato(c.id, 'clases_zoom')} className="text-red-500 font-black text-[10px] uppercase">Eliminar</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -234,24 +291,50 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
 
 function SeccionCertificados({ certificados, setCertificados, esAdmin }) {
   const [form, setForm] = useState({ nombre: '', curso: '', horas: '', nota: '', codigo: '', fecha_exp: '' });
+  
   const guardar = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('certificados').insert([form]);
-    if (!error) { setCertificados([...certificados, form]); setForm({ nombre: '', curso: '', horas: '', nota: '', codigo: '', fecha_exp: '' }); alert("Certificado emitido."); }
+    const { data, error } = await supabase.from('certificados').insert([form]).select();
+    if (!error) { setCertificados([...certificados, data[0]]); setForm({ nombre: '', curso: '', horas: '', nota: '', codigo: '', fecha_exp: '' }); alert("Certificado emitido."); }
   };
+
+  const eliminarCert = async (id) => {
+    if (window.confirm("¿Anular este certificado del sistema?")) {
+      const { error } = await supabase.from('certificados').delete().eq('id', id);
+      if (!error) {
+        setCertificados(prev => prev.filter(c => c.id !== id));
+        alert("Certificado anulado.");
+      }
+    }
+  };
+
   return (
     <div className="bg-white p-10 rounded-[40px] border shadow-sm">
       <h2 className="text-2xl font-black mb-8 italic uppercase text-slate-800">Emisión de Títulos Oficiales</h2>
       {esAdmin ? (
-        <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.keys(form).map(k => (
-            <div key={k}>
-              <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">{k.replace('_',' ')}</label>
-              <input className="w-full border-2 border-slate-50 bg-slate-50/50 p-4 rounded-2xl text-sm outline-none focus:border-blue-600 uppercase" value={form[k]} onChange={e => setForm({...form, [k]: e.target.value})} required />
-            </div>
-          ))}
-          <button className="md:col-span-2 bg-slate-900 text-white p-5 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 shadow-2xl transition-all">Registrar en Sistema</button>
-        </form>
+        <>
+          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            {Object.keys(form).map(k => (
+              <div key={k}>
+                <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">{k.replace('_',' ')}</label>
+                <input className="w-full border-2 border-slate-50 bg-slate-50/50 p-4 rounded-2xl text-sm outline-none focus:border-blue-600 uppercase font-bold" value={form[k]} onChange={e => setForm({...form, [k]: e.target.value})} required />
+              </div>
+            ))}
+            <button className="md:col-span-2 bg-slate-900 text-white p-5 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-600 shadow-2xl transition-all">Registrar en Sistema</button>
+          </form>
+
+          <div className="border-t pt-8">
+             <h3 className="text-sm font-black uppercase text-slate-400 mb-4 tracking-widest">Historial Reciente</h3>
+             <div className="space-y-3">
+                {certificados.slice(-5).map(c => (
+                  <div key={c.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl text-xs">
+                    <span className="font-bold">{c.nombre} - {c.codigo}</span>
+                    <button onClick={() => eliminarCert(c.id)} className="text-red-500 font-black uppercase">Anular</button>
+                  </div>
+                ))}
+             </div>
+          </div>
+        </>
       ) : <p className="text-slate-400 italic text-center py-10 font-bold">Acceso restringido para alumnos.</p>}
     </div>
   );
@@ -288,7 +371,7 @@ function SeccionVerificacion({ db }) {
               <div className="col-span-2 pt-8 border-t border-slate-800 flex flex-col items-center">
                 <p className="text-slate-500 text-[9px] font-black uppercase mb-2">Expedición</p>
                 <p className="font-black text-blue-400 text-sm mb-6">{found.fecha_exp}</p>
-                <img src="/logo.png" className="h-10 grayscale opacity-30" />
+                <img src="/logo.png" className="h-10 grayscale opacity-30" alt="SAP Logo" />
               </div>
             </div>
           </div>
