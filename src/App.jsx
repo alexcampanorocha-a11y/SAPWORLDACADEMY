@@ -150,27 +150,37 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
     if (!file) return;
 
     setSubiendo(true);
-    setProgreso(30); // Simulación inicial de progreso
+    setProgreso(1);
+
+    // Simulación de progreso fluida de 1% a 90% mientras sube a Supabase
+    const interval = setInterval(() => {
+      setProgreso(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 150);
 
     try {
-      // Limpiamos el nombre del archivo para evitar errores de ruta 404
       const nombreLimpio = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const path = `${moduloActivo}_${Date.now()}_${nombreLimpio}`;
       
-      setProgreso(60);
       const { error: uploadError } = await supabase.storage.from('materiales-sap').upload(path, file);
       
+      clearInterval(interval);
       if (uploadError) {
         console.error(uploadError);
-        alert("Error al subir el archivo al Storage. Verifica el tamaño o permisos.");
+        alert("Error al subir el archivo al Storage.");
         setSubiendo(false);
         setProgreso(0);
         return;
       }
 
+      setProgreso(95);
       const { data: { publicUrl } } = supabase.storage.from('materiales-sap').getPublicUrl(path);
       
-      setProgreso(85);
       const tabla = tipo === 'zoom' ? 'clases_zoom' : 'materiales';
       const row = tipo === 'zoom' 
         ? { tema: `[${moduloActivo}] ${tema || file.name}`, link: publicUrl } 
@@ -193,10 +203,11 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         setTema('');
         setSubiendo(false);
         setProgreso(0);
-        alert("¡Subido con éxito!");
-      }, 500);
+        alert("¡Archivo subido con éxito!");
+      }, 300);
 
     } catch (err) {
+      clearInterval(interval);
       console.error(err);
       alert("Error inesperado en la subida.");
       setSubiendo(false);
@@ -218,16 +229,16 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         ))}
       </div>
 
-      {/* BARRA DE PROGRESO DE CARGA */}
+      {/* BARRA DE PROGRESO DINÁMICA 1% - 100% */}
       {subiendo && (
         <div className="bg-white p-6 rounded-[30px] border shadow-lg space-y-3">
           <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-            <span>Subiendo archivo a la plataforma...</span>
-            <span>{progreso}%</span>
+            <span>Cargando archivo a la plataforma...</span>
+            <span className="text-blue-600 font-black">{progreso}%</span>
           </div>
           <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
             <div 
-              className="bg-blue-600 h-full transition-all duration-300 rounded-full" 
+              className="bg-blue-600 h-full transition-all duration-200 rounded-full" 
               style={{ width: `${progreso}%` }}
             ></div>
           </div>
@@ -238,7 +249,12 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         <div className="bg-white p-8 rounded-[40px] border shadow-sm">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-black italic uppercase text-slate-800">Material Académico {moduloActivo}</h2>
-            {esAdmin && <label className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer"> SUBIR <input type="file" hidden onChange={e => manejarSubida(e, 'mat')} /></label>}
+            {esAdmin && (
+              <label className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer hover:bg-slate-800 transition"> 
+                SUBIR ARCHIVO 
+                <input type="file" hidden onChange={e => manejarSubida(e, 'mat')} />
+              </label>
+            )}
           </div>
           <div className="space-y-3">
             {archivosFiltrados.length > 0 ? archivosFiltrados.map(a => (
@@ -258,7 +274,10 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
           {esAdmin && (
             <div className="flex gap-2 mb-6">
               <input className="bg-slate-50 border p-3 rounded-xl text-xs flex-1" placeholder="Título de la clase" value={tema} onChange={e => setTema(e.target.value)} />
-              <label className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer flex items-center"> VIDEO <input type="file" hidden onChange={e => manejarSubida(e, 'zoom')} /></label>
+              <label className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer flex items-center hover:bg-blue-700 transition"> 
+                SUBIR VIDEO 
+                <input type="file" hidden onChange={e => manejarSubida(e, 'zoom')} />
+              </label>
             </div>
           )}
           <div className="space-y-4">
