@@ -125,7 +125,6 @@ export default function App() {
 }
 
 function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
-  // Orden de módulos solicitado: PM, PP, QM, MM
   const [moduloActivo, setModuloActivo] = useState('PM');
   const [tema, setTema] = useState('');
   const modulos = ['PM', 'PP', 'QM', 'MM'];
@@ -149,17 +148,37 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
     if (!file) return;
     try {
       const path = `${moduloActivo}_${Date.now()}_${file.name}`;
-      await supabase.storage.from('materiales-sap').upload(path, file);
+      const { error: uploadError } = await supabase.storage.from('materiales-sap').upload(path, file);
+      
+      if (uploadError) {
+        console.error(uploadError);
+        alert("Error al subir el archivo al Storage. Verifica el tamaño o permisos.");
+        return;
+      }
+
       const { data: { publicUrl } } = supabase.storage.from('materiales-sap').getPublicUrl(path);
       
       const tabla = tipo === 'zoom' ? 'clases_zoom' : 'materiales';
-      const row = tipo === 'zoom' ? { tema: `[${moduloActivo}] ${tema}`, link: publicUrl } : { nombre: path, link: publicUrl };
-      const { data } = await supabase.from(tabla).insert([row]).select();
+      const row = tipo === 'zoom' 
+        ? { tema: `[${moduloActivo}] ${tema || file.name}`, link: publicUrl } 
+        : { nombre: path, link: publicUrl };
+        
+      const { data, error: insertError } = await supabase.from(tabla).insert([row]).select();
+      
+      if (insertError) {
+        console.error(insertError);
+        alert("Error al guardar el registro en la base de datos.");
+        return;
+      }
       
       if (tipo === 'zoom') setClases([...clases, data[0]]);
       else setArchivos([...archivos, data[0]]);
       setTema('');
-    } catch (err) { alert("Error de subida."); }
+      alert("¡Subido con éxito!");
+    } catch (err) {
+      console.error(err);
+      alert("Error inesperado en la subida.");
+    }
   };
 
   return (
@@ -179,7 +198,6 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <div className="bg-white p-8 rounded-[40px] border shadow-sm">
           <div className="flex justify-between items-center mb-8">
-            {/* Título personalizado para material académico */}
             <h2 className="text-xl font-black italic uppercase text-slate-800">Material Académico {moduloActivo}</h2>
             {esAdmin && <label className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer"> SUBIR <input type="file" hidden onChange={e => manejarSubida(e, 'mat')} /></label>}
           </div>
@@ -188,7 +206,7 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
               <div key={a.nombre} className="p-4 bg-slate-50 rounded-2xl border flex justify-between items-center">
                 <span className="text-[11px] font-bold truncate w-40">📄 {a.nombre}</span>
                 <div className="flex gap-3">
-                  <a href={a.link} target="_blank" className="text-blue-600 font-black text-[9px] uppercase">Descargar</a>
+                  <a href={a.link} target="_blank" rel="noopener noreferrer" download className="text-blue-600 font-black text-[9px] uppercase">Descargar</a>
                   {esAdmin && <button onClick={() => eliminarDato(a.nombre, 'materiales')} className="text-red-500 font-black text-[9px] uppercase">X</button>}
                 </div>
               </div>
@@ -197,21 +215,21 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         </div>
 
         <div className="bg-white p-8 rounded-[40px] border-l-[10px] border-blue-600 shadow-sm">
-          {/* Título personalizado para grabaciones de zoom */}
           <h2 className="text-xl font-black italic uppercase text-slate-800 mb-8">Grabación en Zoom {moduloActivo}</h2>
           {esAdmin && (
             <div className="flex gap-2 mb-6">
-              <input className="bg-slate-50 border p-3 rounded-xl text-xs flex-1" placeholder="Título" value={tema} onChange={e => setTema(e.target.value)} />
+              <input className="bg-slate-50 border p-3 rounded-xl text-xs flex-1" placeholder="Título de la clase" value={tema} onChange={e => setTema(e.target.value)} />
               <label className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer flex items-center"> VIDEO <input type="file" hidden onChange={e => manejarSubida(e, 'zoom')} /></label>
             </div>
           )}
           <div className="space-y-4">
             {clasesFiltradas.length > 0 ? clasesFiltradas.map(c => (
               <div key={c.id} className="p-5 bg-slate-900 text-white rounded-[25px] flex justify-between items-center">
-                <span className="text-xs font-bold italic">🎥 {c.tema}</span>
-                <div className="flex gap-3">
-                  <a href={c.link} target="_blank" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase">Play</a>
-                  {esAdmin && <button onClick={() => eliminarDato(c.id, 'clases_zoom')} className="text-red-400 font-black text-[9px]">X</button>}
+                <span className="text-xs font-bold italic truncate max-w-[200px]">🎥 {c.tema}</span>
+                <div className="flex gap-2 items-center">
+                  <a href={c.link} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Play</a>
+                  <a href={c.link} download target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Descargar</a>
+                  {esAdmin && <button onClick={() => eliminarDato(c.id, 'clases_zoom')} className="text-red-400 font-black text-[9px] ml-1">X</button>}
                 </div>
               </div>
             )) : <p className="text-slate-300 text-center py-10 text-xs italic">Sin grabaciones en {moduloActivo}</p>}
@@ -313,7 +331,7 @@ function Login({ onLogin }) {
         <img src="/logo.png" alt="Logo" className="h-40 mb-10 object-contain" />
         <div className="space-y-4 w-full">
           <input className="w-full border p-4 rounded-2xl font-bold text-sm" placeholder="Email" value={u} onChange={e => setU(e.target.value)} />
-          <input className="w-full border p-4 rounded-2xl font-bold text-sm" type="password" placeholder="Pass" value={p} onChange={e => setP(e.target.value)} />
+          <input className="w-full border p-4 rounded-2xl font-bold text-sm" type="password" placeholder="Pass" value={p} onChange={e => setP(p.target.value)} />
           <button onClick={() => onLogin(u, p)} className="w-full bg-blue-600 text-white p-5 rounded-2xl font-black uppercase text-xs shadow-lg">Entrar</button>
         </div>
       </div>
