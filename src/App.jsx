@@ -331,7 +331,7 @@ function Login({ onLogin }) {
         <img src="/logo.png" alt="Logo" className="h-40 mb-10 object-contain" />
         <div className="space-y-4 w-full">
           <input className="w-full border p-4 rounded-2xl font-bold text-sm" placeholder="Email" value={u} onChange={e => setU(e.target.value)} />
-          <input className="w-full border p-4 rounded-2xl font-bold text-sm" type="password" placeholder="Pass" value={p} onChange={e => setP(p.target.value)} />
+          <input className="w-full border p-4 rounded-2xl font-bold text-sm" type="password" placeholder="Pass" value={p} onChange={e => setP(e.target.value)} />
           <button onClick={() => onLogin(u, p)} className="w-full bg-blue-600 text-white p-5 rounded-2xl font-black uppercase text-xs shadow-lg">Entrar</button>
         </div>
       </div>
