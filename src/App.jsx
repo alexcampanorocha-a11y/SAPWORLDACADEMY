@@ -133,9 +133,8 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const modulos = ['PM', 'PP', 'QM', 'MM'];
 
   const archivosFiltrados = archivos.filter(a => a.nombre.toUpperCase().includes(moduloActivo));
-  const clasesFiltradas = clases.filter(c => c.tema.toUpperCase().includes(moduloActivo));
+  const clasesFiltradas = clases.filter(c => c.tema && c.tema.toUpperCase().includes(moduloActivo));
 
-  // Cronómetro interno para medir el tiempo transcurrido de subida
   useEffect(() => {
     let timer;
     if (subiendo) {
@@ -152,10 +151,10 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const eliminarDato = async (identificador, tabla) => {
     if (window.confirm(`¿Eliminar permanentemente?`)) {
       try {
-        const columna = tabla === 'materiales' ? 'nombre' : 'id';
+        const columna = tabla === 'materiales' ? 'nombre' : 'tema';
         await supabase.from(tabla).delete().eq(columna, identificador);
         if (tabla === 'materiales') setArchivos(prev => prev.filter(a => a.nombre !== identificador));
-        else setClases(prev => prev.filter(c => c.id !== identificador));
+        else setClases(prev => prev.filter(c => c.tema !== identificador));
       } catch (err) { alert("Error al eliminar."); }
     }
   };
@@ -175,8 +174,8 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       const { error: uploadError } = await supabase.storage.from('materiales-sap').upload(path, file);
       
       if (uploadError) {
-        console.error(uploadError);
-        alert("Error al subir el archivo al Storage.");
+        console.error("Error en Storage:", uploadError);
+        alert(`Error al subir al Storage: ${uploadError.message}`);
         setSubiendo(false);
         setProgreso(0);
         return;
@@ -194,8 +193,8 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       const { data, error: insertError } = await supabase.from(tabla).insert([row]).select();
       
       if (insertError) {
-        console.error(insertError);
-        alert("Error al guardar el registro en la base de datos.");
+        console.error("Error en Base de Datos:", insertError);
+        alert(`Error en Base de Datos: ${insertError.message}`);
         setSubiendo(false);
         setProgreso(0);
         return;
@@ -212,7 +211,7 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       }, 400);
 
     } catch (err) {
-      console.error(err);
+      console.error("Error inesperado:", err);
       alert("Error inesperado en la subida.");
       setSubiendo(false);
       setProgreso(0);
@@ -233,7 +232,6 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         ))}
       </div>
 
-      {/* BARRA DE PROGRESO Y CRONÓMETRO DE TIEMPO */}
       {subiendo && (
         <div className="bg-white p-6 rounded-[30px] border shadow-lg space-y-3">
           <div className="flex justify-between text-xs font-black uppercase text-slate-700">
@@ -286,12 +284,12 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
           )}
           <div className="space-y-4">
             {clasesFiltradas.length > 0 ? clasesFiltradas.map(c => (
-              <div key={c.id} className="p-5 bg-slate-900 text-white rounded-[25px] flex justify-between items-center">
+              <div key={c.tema} className="p-5 bg-slate-900 text-white rounded-[25px] flex justify-between items-center">
                 <span className="text-xs font-bold italic truncate max-w-[200px]">🎥 {c.tema}</span>
                 <div className="flex gap-2 items-center">
                   <a href={c.link} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Play</a>
                   <a href={c.link} download target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Descargar</a>
-                  {esAdmin && <button onClick={() => eliminarDato(c.id, 'clases_zoom')} className="text-red-400 font-black text-[9px] ml-1">X</button>}
+                  {esAdmin && <button onClick={() => eliminarDato(c.tema, 'clases_zoom')} className="text-red-400 font-black text-[9px] ml-1">X</button>}
                 </div>
               </div>
             )) : <p className="text-slate-300 text-center py-10 text-xs italic">Sin grabaciones en {moduloActivo}</p>}
