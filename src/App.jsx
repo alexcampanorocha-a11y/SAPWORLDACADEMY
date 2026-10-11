@@ -129,10 +129,25 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const [tema, setTema] = useState('');
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState(0);
+  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
   const modulos = ['PM', 'PP', 'QM', 'MM'];
 
   const archivosFiltrados = archivos.filter(a => a.nombre.toUpperCase().includes(moduloActivo));
   const clasesFiltradas = clases.filter(c => c.tema.toUpperCase().includes(moduloActivo));
+
+  // Cronómetro interno para medir el tiempo transcurrido de subida
+  useEffect(() => {
+    let timer;
+    if (subiendo) {
+      setTiempoTranscurrido(0);
+      timer = setInterval(() => {
+        setTiempoTranscurrido(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [subiendo]);
 
   const eliminarDato = async (identificador, tabla) => {
     if (window.confirm(`¿Eliminar permanentemente?`)) {
@@ -150,26 +165,15 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
     if (!file) return;
 
     setSubiendo(true);
-    setProgreso(1);
-
-    // Simulación de progreso fluida de 1% a 90% mientras sube a Supabase
-    const interval = setInterval(() => {
-      setProgreso(prev => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 150);
+    setProgreso(10);
 
     try {
       const nombreLimpio = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
       const path = `${moduloActivo}_${Date.now()}_${nombreLimpio}`;
       
+      setProgreso(40);
       const { error: uploadError } = await supabase.storage.from('materiales-sap').upload(path, file);
       
-      clearInterval(interval);
       if (uploadError) {
         console.error(uploadError);
         alert("Error al subir el archivo al Storage.");
@@ -178,7 +182,7 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         return;
       }
 
-      setProgreso(95);
+      setProgreso(75);
       const { data: { publicUrl } } = supabase.storage.from('materiales-sap').getPublicUrl(path);
       
       const tabla = tipo === 'zoom' ? 'clases_zoom' : 'materiales';
@@ -186,6 +190,7 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         ? { tema: `[${moduloActivo}] ${tema || file.name}`, link: publicUrl } 
         : { nombre: path, link: publicUrl };
         
+      setProgreso(90);
       const { data, error: insertError } = await supabase.from(tabla).insert([row]).select();
       
       if (insertError) {
@@ -204,10 +209,9 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         setSubiendo(false);
         setProgreso(0);
         alert("¡Archivo subido con éxito!");
-      }, 300);
+      }, 400);
 
     } catch (err) {
-      clearInterval(interval);
       console.error(err);
       alert("Error inesperado en la subida.");
       setSubiendo(false);
@@ -229,16 +233,16 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
         ))}
       </div>
 
-      {/* BARRA DE PROGRESO DINÁMICA 1% - 100% */}
+      {/* BARRA DE PROGRESO Y CRONÓMETRO DE TIEMPO */}
       {subiendo && (
         <div className="bg-white p-6 rounded-[30px] border shadow-lg space-y-3">
           <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-            <span>Cargando archivo a la plataforma...</span>
-            <span className="text-blue-600 font-black">{progreso}%</span>
+            <span>Cargando archivo (Los videos son pesados y pueden tardar unos minutos)...</span>
+            <span className="text-blue-600 font-black">{progreso}% ({tiempoTranscurrido}s transcurridos)</span>
           </div>
           <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
             <div 
-              className="bg-blue-600 h-full transition-all duration-200 rounded-full" 
+              className="bg-blue-600 h-full transition-all duration-300 rounded-full" 
               style={{ width: `${progreso}%` }}
             ></div>
           </div>
