@@ -127,6 +127,8 @@ export default function App() {
 function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const [moduloActivo, setModuloActivo] = useState('PM');
   const [tema, setTema] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
+  const [progreso, setProgreso] = useState(0);
   const modulos = ['PM', 'PP', 'QM', 'MM'];
 
   const archivosFiltrados = archivos.filter(a => a.nombre.toUpperCase().includes(moduloActivo));
@@ -146,18 +148,29 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const manejarSubida = async (e, tipo) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    setSubiendo(true);
+    setProgreso(30); // Simulación inicial de progreso
+
     try {
-      const path = `${moduloActivo}_${Date.now()}_${file.name}`;
+      // Limpiamos el nombre del archivo para evitar errores de ruta 404
+      const nombreLimpio = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+      const path = `${moduloActivo}_${Date.now()}_${nombreLimpio}`;
+      
+      setProgreso(60);
       const { error: uploadError } = await supabase.storage.from('materiales-sap').upload(path, file);
       
       if (uploadError) {
         console.error(uploadError);
         alert("Error al subir el archivo al Storage. Verifica el tamaño o permisos.");
+        setSubiendo(false);
+        setProgreso(0);
         return;
       }
 
       const { data: { publicUrl } } = supabase.storage.from('materiales-sap').getPublicUrl(path);
       
+      setProgreso(85);
       const tabla = tipo === 'zoom' ? 'clases_zoom' : 'materiales';
       const row = tipo === 'zoom' 
         ? { tema: `[${moduloActivo}] ${tema || file.name}`, link: publicUrl } 
@@ -168,16 +181,26 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
       if (insertError) {
         console.error(insertError);
         alert("Error al guardar el registro en la base de datos.");
+        setSubiendo(false);
+        setProgreso(0);
         return;
       }
       
-      if (tipo === 'zoom') setClases([...clases, data[0]]);
-      else setArchivos([...archivos, data[0]]);
-      setTema('');
-      alert("¡Subido con éxito!");
+      setProgreso(100);
+      setTimeout(() => {
+        if (tipo === 'zoom') setClases([...clases, data[0]]);
+        else setArchivos([...archivos, data[0]]);
+        setTema('');
+        setSubiendo(false);
+        setProgreso(0);
+        alert("¡Subido con éxito!");
+      }, 500);
+
     } catch (err) {
       console.error(err);
       alert("Error inesperado en la subida.");
+      setSubiendo(false);
+      setProgreso(0);
     }
   };
 
@@ -194,6 +217,22 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
           </button>
         ))}
       </div>
+
+      {/* BARRA DE PROGRESO DE CARGA */}
+      {subiendo && (
+        <div className="bg-white p-6 rounded-[30px] border shadow-lg space-y-3">
+          <div className="flex justify-between text-xs font-black uppercase text-slate-700">
+            <span>Subiendo archivo a la plataforma...</span>
+            <span>{progreso}%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+            <div 
+              className="bg-blue-600 h-full transition-all duration-300 rounded-full" 
+              style={{ width: `${progreso}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <div className="bg-white p-8 rounded-[40px] border shadow-sm">
