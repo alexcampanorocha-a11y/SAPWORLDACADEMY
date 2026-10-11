@@ -151,10 +151,10 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
   const eliminarDato = async (identificador, tabla) => {
     if (window.confirm(`¿Eliminar permanentemente?`)) {
       try {
-        const columna = tabla === 'materiales' ? 'nombre' : 'tema';
+        const columna = tabla === 'materiales' ? 'nombre' : 'id';
         await supabase.from(tabla).delete().eq(columna, identificador);
         if (tabla === 'materiales') setArchivos(prev => prev.filter(a => a.nombre !== identificador));
-        else setClases(prev => prev.filter(c => c.tema !== identificador));
+        else setClases(prev => prev.filter(c => c.id !== identificador));
       } catch (err) { alert("Error al eliminar."); }
     }
   };
@@ -284,12 +284,12 @@ function SeccionAula({ archivos, setArchivos, clases, setClases, esAdmin }) {
           )}
           <div className="space-y-4">
             {clasesFiltradas.length > 0 ? clasesFiltradas.map(c => (
-              <div key={c.tema} className="p-5 bg-slate-900 text-white rounded-[25px] flex justify-between items-center">
+              <div key={c.id} className="p-5 bg-slate-900 text-white rounded-[25px] flex justify-between items-center">
                 <span className="text-xs font-bold italic truncate max-w-[200px]">🎥 {c.tema}</span>
                 <div className="flex gap-2 items-center">
                   <a href={c.link} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Play</a>
                   <a href={c.link} download target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-xl text-[9px] font-black uppercase">Descargar</a>
-                  {esAdmin && <button onClick={() => eliminarDato(c.tema, 'clases_zoom')} className="text-red-400 font-black text-[9px] ml-1">X</button>}
+                  {esAdmin && <button onClick={() => eliminarDato(c.id, 'clases_zoom')} className="text-red-400 font-black text-[9px] ml-1">X</button>}
                 </div>
               </div>
             )) : <p className="text-slate-300 text-center py-10 text-xs italic">Sin grabaciones en {moduloActivo}</p>}
